@@ -6,10 +6,10 @@ require 'visualize_helper/version'
 Gem::Specification.new do |spec|
   spec.name          = "visualize_helper"
   spec.version       = VisualizeHelper::VERSION
-  spec.authors       = ["TODO: Write your name"]
-  spec.email         = ["TODO: Write your email address"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.authors       = ["Raphael Ottoni Santiago Machado de Faria"]
+  spec.email         = ["rapha.ottoni@gmail.com"]
+  spec.summary       = %q{Common methods used in visualize.dcc.ufmg.br}
+  spec.description   = %q{Common methods used in visualize.dcc.ufmg.br}
   spec.homepage      = ""
   spec.license       = "MIT"
 
