@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["rapha.ottoni@gmail.com"]
   spec.summary       = %q{Common methods used in visualize.dcc.ufmg.br}
   spec.description   = %q{Common methods used in visualize.dcc.ufmg.br}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/raphaottoni/visualize_helper"
   spec.license       = "MIT"
   spec.required_ruby_version = '>=  2.1.5'
 
@@ -21,9 +21,9 @@ Gem::Specification.new do |spec|
 
   spec.extensions = %w[ext/visualize_helper/extconf.rb]
 
-  spec.add_development_dependency "bundler", "~> 1.7.3"
-  spec.add_development_dependency "rake", "~> 10.3.2"
+  spec.add_development_dependency "bundler", "~> 1.7"
+  spec.add_development_dependency "rake", "~> 10.3"
   spec.add_development_dependency "rake-compiler", "~> 0.9.3"
-  spec.add_development_dependency "rspec", "~> 3.1.0"
-  spec.add_development_dependency "guard-rspec", "~> 4.3.1"
+  spec.add_development_dependency "rspec", "~> 3.1"
+  spec.add_development_dependency "guard-rspec", "~> 4.3"
 end
