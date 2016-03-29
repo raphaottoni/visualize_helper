@@ -35,34 +35,45 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
   int days_c = atoi(StringValuePtr(days));
   int min_c = FIX2INT(rb_ary_entry(array,0));
   int max_c = FIX2INT(rb_ary_entry(array,1));
-  int teste[3] = {1,2,0};
-
+  int period;
 
   if (days_c < first_interval_c) {
     if (min_c > days_c) {
-      rb_ary_store(array,0,days);
+      min_c = days_c;
+      //rb_ary_store(array,0,days);
     }
-    rb_ary_store(array,2,INT2FIX(0));
+    period = 0;
+    //rb_ary_store(array,2,INT2FIX(0));
   }else if (days_c == 0) {
-    int index = findIndex(intervals,intervals_size,0);
-    rb_ary_store(array,2,INT2FIX(index+1));
+    period = findIndex(intervals,intervals_size,0)+1;
+    //rb_ary_store(array,2,INT2FIX(index+1));
 
   }else if (days_c > last_interval_c ) {
-
     if (max_c < days_c) {
-      rb_ary_store(array,1,days);
+      max_c = days_c;
+      //rb_ary_store(array,1,days);
     }
-    rb_ary_store(array,2,INT2FIX(aggr_size -1));
-  
+    //rb_ary_store(array,2,INT2FIX(aggr_size -1));
+    period = aggr_size -1;
   }else {  
-     
+    for ( int index = 0 ; index < intervals_size ; index++){
+      if( index < (intervals_size - 1) ){
+        int intervals_index_plus_1 =  FIX2INT(rb_ary_entry(intervals,index+1));
+        if ( intervals_index_plus_1 <= 0  ){
+          if (( days_c >= rb_ary_entry(intervals,index)) && (days_c < intervals_index_plus_1)) {
+            period = index +1;
+            //rb_ary_store(array,2,INT2FIX(i+1));
+            break;
+          }  
+        }else if ( (days_c > rb_ary_entry(intervals,index) ) && (days_c <= intervals_index_plus_1) ) {
+          period = index + 2;
+          //rb_ary_store(array,2,INT2FIX(i+2));
+          break;
+        }   
+      }  
+    }
   }
-  //rb_ary_store(array,0,INT2FIX(first_interval));  
-  //rb_ary_push(array,StringValue("eiii"));
-  //rb_ary_store(array,2,INT2FIX(first_interval));
-  //if days < first_interval{
-  //  rb_ary_store(array,2,INT2FIX(first_interval));  
-  //}  
+  rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,0));
 
   return ST_CONTINUE;
 }  
@@ -71,13 +82,7 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
 // Return: [ min, max, period]
 static VALUE min_max_period(VALUE self, VALUE min, VALUE max, VALUE hash, VALUE intervals, VALUE aggr)
 {
-
-    // Convert the Ruby Values to C values
-    //int  min_c = FIX2INT(min);
-    //int  max_c = FIX2INT(max);
     int  period = Qnil;
-    //VALUE  period = T_NIL;
-    //int  intervals_size = RARRAY_LEN(intervals);
 
     // Create Ruby array that will be the result
     VALUE array  = rb_ary_new();
@@ -93,8 +98,11 @@ static VALUE min_max_period(VALUE self, VALUE min, VALUE max, VALUE hash, VALUE 
     // iterate on hash calling "encontra_min_max_period" for each
     rb_hash_foreach(hash,encontra_min_max_period,array);
       
+    // flatten on aggr
+    
+
     // Return results
-    return array;
+    return aggr;
 }
 
 
