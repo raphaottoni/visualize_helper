@@ -1,4 +1,37 @@
 #include <ruby.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+int myCompare (const void * a, const void * b ) {
+    const char *pa = *(const char**)a;
+    const char *pb = *(const char**)b;
+
+    return strcmp(pa,pb);
+}
+
+
+static VALUE sort(VALUE self, VALUE strings)
+{
+    int strings_size = RARRAY_LEN(strings);
+    //const char *input[] = {"a","orange","apple","mobile","car"};
+    const char *input[strings_size];
+
+    for (int i = 0; i< strings_size; i++){
+      VALUE string  = rb_ary_entry(strings,i);
+      input[i] = StringValuePtr(string);
+    }
+
+    int stringLen = sizeof(input) / sizeof(char *);
+    qsort(input, stringLen, sizeof(char *), myCompare);
+
+    VALUE resultado = rb_ary_new();
+    for (int i=0; i<stringLen; ++i) {
+      rb_ary_push(resultado,rb_str_new2(input[i]));
+    } 
+
+    return resultado;  
+}
 
 // Hello World  without parameters
 static VALUE hello_world()
@@ -107,8 +140,36 @@ static VALUE min_max_period(VALUE self, VALUE min, VALUE max, VALUE hash, VALUE 
     return array;
 }
 
+// Function to generate the boxes and links of each trajectory
+static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE aggr, VALUE boxes, VALUE links, VALUE dict, VALUE type_agroupment)
+{
+
+  VALUE seq_key2 = rb_ary_new();
+  // Initial Variables
+  //for(int period = 0; period < RARRAY_LEN(aggr); period++ ){
+  //  VALUE seq_key = rb_ary_new();
+  //  VALUE seq = rb_ary_entry(aggr,period);
+  //  int seq_size = RARRAY_LEN(seq);
+
+  //  // Translate sequences with dict
+  //  if (seq_size == 0) {
+  //    rb_ary_push(seq_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
+  //  }else{
+
+  //    for(int i = 0; i < seq_size; i++ ) {
+  //      rb_ary_push(seq_key,rb_hash_aref(dict,rb_ary_entry(seq,i)));  
+  //    }  
+  //  }
+
+  //  // agroup by unique or not
+  //  if ( strcmp(StringValue(type_agroupment),"n") != 0 ) {
+  //}  
+  return seq_key2;
+}  
 
 
+
+// Function test that only return a int variable in C to Ruby
 static VALUE test(VALUE self, VALUE param){
 
   int a =  INT2FIX(param);
@@ -127,6 +188,12 @@ void Init_visualize_helper(void) {
   // Register the method min_max_period 
   rb_define_singleton_method(mVisualizeHelper, "min_max_period", min_max_period, 5);
 
+  // Register the method generate_boxes_and_links
+  rb_define_singleton_method(mVisualizeHelper, "generate_boxes_and_links", generate_boxes_and_links, 7);
+
   // Register the method  for development testing
   rb_define_singleton_method(mVisualizeHelper, "test", test, 1 );
+
+  // Register the method sort
+  rb_define_singleton_method(mVisualizeHelper, "sort", sort, 1 );
 }
