@@ -73,6 +73,11 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
       }  
     }
   }
+
+  
+
+  rb_ary_store(array,0,INT2FIX(min_c));
+  rb_ary_store(array,1,INT2FIX(max_c));
   rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,0));
 
   return ST_CONTINUE;
@@ -98,11 +103,8 @@ static VALUE min_max_period(VALUE self, VALUE min, VALUE max, VALUE hash, VALUE 
     // iterate on hash calling "encontra_min_max_period" for each
     rb_hash_foreach(hash,encontra_min_max_period,array);
       
-    // flatten on aggr
-    
-
     // Return results
-    return aggr;
+    return array;
 }
 
 
