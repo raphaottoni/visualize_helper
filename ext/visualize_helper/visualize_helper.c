@@ -10,11 +10,73 @@ int myCompare (const void * a, const void * b ) {
     return strcmp(pa,pb);
 }
 
+// recive a sorted array of strings and return a sorted array with only the unique elements 
+static VALUE uniq(VALUE sorted_array){
 
-static VALUE sort(VALUE self, VALUE strings)
+  //initialize return variable in ruby
+  VALUE uniq_array = rb_ary_new();
+
+  //initialize variables for compare 
+  char* previous;
+  char* current;
+
+  for( int i = 0; i < RARRAY_LEN(sorted_array); i++){
+    VALUE current_temp = rb_ary_entry(sorted_array,i);
+    current =  StringValuePtr(current_temp);
+    // initial case, when there is no previous
+    if ( i == 0 ){
+      VALUE previous_temp = rb_ary_entry(sorted_array,i);
+      previous =  StringValuePtr(previous_temp);
+      rb_ary_push(uniq_array,rb_ary_entry(sorted_array,i));
+    } else {
+      if (strcmp(previous,current) != 0 ){
+        rb_ary_push(uniq_array,rb_ary_entry(sorted_array,i));
+        VALUE previous_temp = rb_ary_entry(sorted_array,i);
+        previous = StringValuePtr(previous_temp);
+      } 
+    }
+  }
+  
+  return uniq_array;
+}
+
+//static VALUE join(VALUE self, VALUE strings){
+static VALUE join(VALUE strings){
+
+  // initial variables
+  char* joined;
+  int strings_size = RARRAY_LEN(strings);
+  int string_size;
+  VALUE string_temp;
+  VALUE result;
+  
+  string_temp = rb_ary_entry(strings,0);
+  string_size = strlen(StringValuePtr(string_temp));
+  joined = (char*) malloc(strings_size + 1);
+  sprintf(joined,"%s", StringValuePtr(string_temp));
+
+  for (int i = 1 ; i < strings_size; i++) {
+    
+    string_temp = rb_ary_entry(strings,i);
+    string_size = strlen(StringValuePtr(string_temp));
+      
+    joined = (char*)  realloc(joined, string_size + strlen(joined) + 1);
+    sprintf(joined,"%s,%s", joined, StringValuePtr(string_temp));
+
+  }
+  result = rb_str_new2(joined);  
+  free(joined);
+  return  result;
+}
+
+
+
+// Receive  an array of unsorted strings with repeated strings and return a single a sorted array with unique elementes or with all
+// strings = array of strings
+// unique =  0 or 1  if want to call unique or not
+static VALUE sort_uniq(VALUE self, VALUE strings, VALUE unique)
 {
     int strings_size = RARRAY_LEN(strings);
-    //const char *input[] = {"a","orange","apple","mobile","car"};
     const char *input[strings_size];
 
     for (int i = 0; i< strings_size; i++){
@@ -25,12 +87,14 @@ static VALUE sort(VALUE self, VALUE strings)
     int stringLen = sizeof(input) / sizeof(char *);
     qsort(input, stringLen, sizeof(char *), myCompare);
 
+
+    // Transform the result input into a ruby array
     VALUE resultado = rb_ary_new();
     for (int i=0; i<stringLen; ++i) {
       rb_ary_push(resultado,rb_str_new2(input[i]));
     } 
 
-    return resultado;  
+    return (FIX2INT(unique) == 0 ) ? resultado : uniq(resultado);
 }
 
 // Hello World  without parameters
@@ -38,6 +102,8 @@ static VALUE hello_world()
 {
     return rb_str_new_cstr("hello world");
 }
+
+
 
 // Find the index of the target value inside array
 int findIndex(VALUE intervals, size_t size, int target) 
@@ -140,33 +206,69 @@ static VALUE min_max_period(VALUE self, VALUE min, VALUE max, VALUE hash, VALUE 
     return array;
 }
 
+
+//function to remove element from a array of strings
+static VALUE remove_entry_from_array (VALUE strings, char* element){
+    
+    //initial variables
+    VALUE result = rb_ary_new();
+    char* current_value;
+    VALUE current_value_temp;
+    
+    for(int i = 0; i < RARRAY_LEN(strings); i++){
+        current_value_temp = rb_ary_entry(strings,i);
+        current_value  = StringValuePtr(current_value_temp);
+        if (strcmp(current_value, element) != 0) {
+          rb_ary_push(result,rb_ary_entry(strings,i));
+        }
+    }
+
+    return result;
+}
+
 // Function to generate the boxes and links of each trajectory
 static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE aggr, VALUE boxes, VALUE links, VALUE dict, VALUE type_agroupment)
 {
 
-  VALUE seq_key2 = rb_ary_new();
+  VALUE seq_key_result;
   // Initial Variables
-  //for(int period = 0; period < RARRAY_LEN(aggr); period++ ){
-  //  VALUE seq_key = rb_ary_new();
-  //  VALUE seq = rb_ary_entry(aggr,period);
-  //  int seq_size = RARRAY_LEN(seq);
+  int length_seq_sorted;
 
-  //  // Translate sequences with dict
-  //  if (seq_size == 0) {
-  //    rb_ary_push(seq_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
-  //  }else{
+  for(int period = 0; period < RARRAY_LEN(aggr); period++ ){
+    VALUE seq_key = rb_ary_new();
+    VALUE seq = rb_ary_entry(aggr,period);
+    int seq_size = RARRAY_LEN(seq);
 
-  //    for(int i = 0; i < seq_size; i++ ) {
-  //      rb_ary_push(seq_key,rb_hash_aref(dict,rb_ary_entry(seq,i)));  
-  //    }  
-  //  }
+    // Translate sequences with dict
+    if (seq_size == 0) {
+      rb_ary_push(seq_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
+    }else{
 
-  //  // agroup by unique or not
-  //  if ( strcmp(StringValue(type_agroupment),"n") != 0 ) {
-  //}  
-  return seq_key2;
+      for(int i = 0; i < seq_size; i++ ) {
+        rb_ary_push(seq_key,rb_hash_aref(dict,rb_ary_entry(seq,i)));  
+      }  
+    }
+
+    // agroup by unique or not
+    if ( strcmp(StringValuePtr(type_agroupment),"n") != 0 ) {
+      //sort with uniq
+      seq_key = sort_uniq(self,seq_key,INT2FIX(1));
+    }else{
+      //sort without uniq
+      seq_key = sort_uniq(self,seq_key,INT2FIX(0));
+    }
+
+    // if there is "no-event" and other one selected, remove the "no-event"
+    length_seq_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") != 0 ) ? RARRAY_LEN(seq_key)  : RARRAY_LEN(uniq(seq_key)) ;
+    if (length_seq_sorted != 1) {
+      seq_key = remove_entry_from_array(seq_key,"M-3");
+    }
+
+    // Generate the key
+    seq_key_result = join(seq_key);
+  }  
+  return seq_key_result;
 }  
-
 
 
 // Function test that only return a int variable in C to Ruby
@@ -195,5 +297,8 @@ void Init_visualize_helper(void) {
   rb_define_singleton_method(mVisualizeHelper, "test", test, 1 );
 
   // Register the method sort
-  rb_define_singleton_method(mVisualizeHelper, "sort", sort, 1 );
+  rb_define_singleton_method(mVisualizeHelper, "sort_uniq", sort_uniq, 2 );
+
+  // Register the method sort
+  rb_define_singleton_method(mVisualizeHelper, "join", join, 1 );
 }
