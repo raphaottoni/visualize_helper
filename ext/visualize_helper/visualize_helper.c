@@ -1,6 +1,8 @@
 #include <ruby.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <math.h>
 
 
 int myCompare (const void * a, const void * b ) {
@@ -227,17 +229,38 @@ static VALUE remove_entry_from_array (VALUE strings, char* element){
 }
 
 // Function to generate the boxes and links of each trajectory
-static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE aggr, VALUE boxes, VALUE links, VALUE dict, VALUE type_agroupment)
+static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE aggr, VALUE boxes, VALUE links, VALUE dict, VALUE type_agroupment, VALUE value)
 {
 
   VALUE seq_key_result;
+  VALUE prox_key_result;
   // Initial Variables
   int length_seq_sorted;
+  int length_prox_sorted;
+  VALUE boxes_period_value;
+  VALUE links_period_value;
+  VALUE seq_key;
+  VALUE prox_key;
+  VALUE seq;
+  VALUE aggr_prox;
+  int seq_size;
+  int aggr_prox_size;
+  int prox;
+  int aggr_size = RARRAY_LEN(aggr);
+  char* link_key;
+  char* period_s;
+  char* prox_s;
 
-  for(int period = 0; period < RARRAY_LEN(aggr); period++ ){
-    VALUE seq_key = rb_ary_new();
-    VALUE seq = rb_ary_entry(aggr,period);
-    int seq_size = RARRAY_LEN(seq);
+
+  for(int period = 0; period < aggr_size; period++ ){
+     seq_key = rb_ary_new();
+
+     if (period < aggr_size - 1) {
+      prox_key = rb_ary_new();
+     } 
+     seq = rb_ary_entry(aggr,period);
+     seq_size = RARRAY_LEN(seq);
+
 
     // Translate sequences with dict
     if (seq_size == 0) {
@@ -250,7 +273,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
     }
 
     // agroup by unique or not
-    if ( strcmp(StringValuePtr(type_agroupment),"n") != 0 ) {
+    if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
       //sort with uniq
       seq_key = sort_uniq(self,seq_key,INT2FIX(1));
     }else{
@@ -259,15 +282,75 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
     }
 
     // if there is "no-event" and other one selected, remove the "no-event"
-    length_seq_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") != 0 ) ? RARRAY_LEN(seq_key)  : RARRAY_LEN(uniq(seq_key)) ;
+    length_seq_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") == 0 ) ? RARRAY_LEN(seq_key)  : RARRAY_LEN(uniq(seq_key)) ;
     if (length_seq_sorted != 1) {
       seq_key = remove_entry_from_array(seq_key,"M-3");
     }
 
     // Generate the key
     seq_key_result = join(seq_key);
+
+
+    //
+    boxes_period_value = rb_hash_aref(rb_ary_entry(boxes,period),seq_key_result);
+    if (boxes_period_value  == Qnil) {
+      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result,value);
+    }else {
+      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result,boxes_period_value + value);
+    }    
+
+    prox = period +1;
+
+    if (prox < aggr_size ) {
+      aggr_prox = rb_ary_entry(aggr,prox); 
+      aggr_prox_size = (int) RARRAY_LEN(aggr_prox);
+      if ( aggr_prox_size == 0) {
+        rb_ary_push(prox_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
+      }else{
+        for(int i = 0; i < aggr_prox_size ; i++ ) {
+          rb_ary_push(prox_key,rb_hash_aref(dict,rb_ary_entry(aggr_prox,i)));  
+        }  
+      }     
+
+       // agroup by unique or not
+      if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
+        //sort with uniq
+        prox_key = sort_uniq(self,prox_key,INT2FIX(1));
+      }else{
+        //sort without uniq
+        prox_key = sort_uniq(self,prox_key,INT2FIX(0));
+      }
+
+      // if there is "no-event" and other one selected, remove the "no-event"
+      length_prox_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") == 0 ) ? RARRAY_LEN(prox_key)  : RARRAY_LEN(uniq(prox_key)) ;
+      if (length_prox_sorted != 1) {
+        prox_key = remove_entry_from_array(prox_key,"M-3");
+      }
+
+      // Generate the key
+      prox_key_result = join(prox_key);
+
+      // generate a key link
+      period_s = ( period == 0 ) ? (char*) malloc(1)  : (char*) malloc(floor(log10(abs(period))) + 1);
+      prox_s = ( prox == 0 ) ? (char*) malloc(1)  : (char*) malloc(floor(log10(abs(prox))) + 1);
+      sprintf(period_s,"%d",period);
+      sprintf(prox_s,"%d",prox);
+      link_key =  (char*) malloc( strlen(period_s) + strlen(StringValuePtr(seq_key_result)) + strlen(prox_s) + strlen(StringValuePtr(prox_key_result)) + 3);
+      sprintf(link_key,"%s_%s;%s_%s", period_s,StringValuePtr(seq_key_result),prox_s,StringValuePtr(prox_key_result));
+
+      links_period_value = rb_hash_aref(rb_ary_entry(links,period),prox_key_result);
+      if (links_period_value  == Qnil) {
+        rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key),value);
+      }else {
+        rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key),links_period_value + value);
+      }    
+
+
+
+    }//end prox < aggr_size
+
   }  
-  return seq_key_result;
+  return links;
 }  
 
 
@@ -291,7 +374,7 @@ void Init_visualize_helper(void) {
   rb_define_singleton_method(mVisualizeHelper, "min_max_period", min_max_period, 5);
 
   // Register the method generate_boxes_and_links
-  rb_define_singleton_method(mVisualizeHelper, "generate_boxes_and_links", generate_boxes_and_links, 7);
+  rb_define_singleton_method(mVisualizeHelper, "generate_boxes_and_links", generate_boxes_and_links, 8);
 
   // Register the method  for development testing
   rb_define_singleton_method(mVisualizeHelper, "test", test, 1 );
