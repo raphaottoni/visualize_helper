@@ -275,10 +275,10 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
     // agroup by unique or not
     if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
       //sort with uniq
-      seq_key = sort_uniq(self,seq_key,INT2FIX(1));
+      seq_key = sort_uniq(self,seq_key,1);
     }else{
       //sort without uniq
-      seq_key = sort_uniq(self,seq_key,INT2FIX(0));
+      seq_key = sort_uniq(self,seq_key,0);
     }
 
     // if there is "no-event" and other one selected, remove the "no-event"
@@ -289,7 +289,6 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
 
     // Generate the key
     seq_key_result = join(seq_key);
-
 
     //
     boxes_period_value = rb_hash_aref(rb_ary_entry(boxes,period),seq_key_result);
