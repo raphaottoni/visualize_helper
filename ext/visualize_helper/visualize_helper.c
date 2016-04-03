@@ -62,8 +62,10 @@ static char* join(VALUE strings){
       string_total_size += strlen(StringValuePtr(string_temp));
   }
 
-  joined = (char*) malloc( string_total_size +  strings_size + 1);
-  string_size = strlen(StringValuePtr(string_temp));
+
+  joined = (char*) malloc(string_total_size +strings_size + 1);
+  string_temp = rb_ary_entry(strings,0);
+  //string_size = strlen(StringValuePtr(string_temp));
   sprintf(joined,"%s", StringValuePtr(string_temp));
 
 
@@ -73,6 +75,7 @@ static char* join(VALUE strings){
     sprintf(joined,"%s,%s", joined, StringValuePtr(string_temp));
 
   }
+  strcat(joined,"\0");
   //result = rb_str_new2(joined);  
   //free(joined);
   //fprintf(f,"%s\n",joined);
@@ -231,7 +234,7 @@ static VALUE remove_entry_from_array (VALUE strings, char* element){
 }
 
 // Function to generate the boxes and links of each trajectory
-static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE aggr, VALUE boxes, VALUE links, VALUE dict, VALUE type_agroupment, VALUE value)
+static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE links, VALUE dict, VALUE type_agroupment, VALUE value)
 {
 
   char* seq_key_result;
@@ -359,6 +362,11 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
 }  
 
 
+static VALUE join_teste(VALUE self, VALUE strings){
+
+    return rb_str_new2(join(strings));
+}
+
 
 // Main function called when the gem is loaded 
 void Init_visualize_helper(void) {
@@ -370,11 +378,11 @@ void Init_visualize_helper(void) {
   rb_define_singleton_method(mVisualizeHelper, "min_max_period", min_max_period, 5);
 
   // Register the method generate_boxes_and_links
-  rb_define_singleton_method(mVisualizeHelper, "generate_boxes_and_links", generate_boxes_and_links, 8);
+  rb_define_singleton_method(mVisualizeHelper, "generate_boxes_and_links", generate_boxes_and_links, 6);
 
   // Register the method sort
   rb_define_singleton_method(mVisualizeHelper, "sort_uniq", sort_uniq, 2 );
 
   // Register the method sort
-  //rb_define_singleton_method(mVisualizeHelper, "join", join, 1 );
+  rb_define_singleton_method(mVisualizeHelper, "join_teste", join_teste, 1 );
 }
