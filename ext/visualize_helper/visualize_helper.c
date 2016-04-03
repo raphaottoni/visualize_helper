@@ -76,7 +76,7 @@ static VALUE join(VALUE strings){
 // Receive  an array of unsorted strings with repeated strings and return a single a sorted array with unique elementes or with all
 // strings = array of strings
 // unique =  0 or 1  if want to call unique or not
-static VALUE sort_uniq(VALUE self, VALUE strings, VALUE unique)
+static VALUE sort_uniq(VALUE self, VALUE strings, int unique)
 {
     int strings_size = RARRAY_LEN(strings);
     const char *input[strings_size];
@@ -96,15 +96,8 @@ static VALUE sort_uniq(VALUE self, VALUE strings, VALUE unique)
       rb_ary_push(resultado,rb_str_new2(input[i]));
     } 
 
-    return (FIX2INT(unique) == 0 ) ? resultado : uniq(resultado);
+    return (unique == 0 ) ? resultado : uniq(resultado);
 }
-
-// Hello World  without parameters
-static VALUE hello_world()
-{
-    return rb_str_new_cstr("hello world");
-}
-
 
 
 // Find the index of the target value inside array
@@ -237,6 +230,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
   // Initial Variables
   int length_seq_sorted;
   int length_prox_sorted;
+  VALUE result_final;
   VALUE boxes_period_value;
   VALUE links_period_value;
   VALUE seq_key;
@@ -251,7 +245,6 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
   char* period_s;
   char* prox_s;
 
-
   for(int period = 0; period < aggr_size; period++ ){
      seq_key = rb_ary_new();
 
@@ -259,22 +252,21 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
       prox_key = rb_ary_new();
      } 
      seq = rb_ary_entry(aggr,period);
-     seq_size = RARRAY_LEN(seq);
+     seq_size = (int) RARRAY_LEN(seq);
 
+      // Translate sequences with dict
+      if (seq_size == 0) {
+        rb_ary_push(seq_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
+      }else{
 
-    // Translate sequences with dict
-    if (seq_size == 0) {
-      rb_ary_push(seq_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
-    }else{
-
-      for(int i = 0; i < seq_size; i++ ) {
-        rb_ary_push(seq_key,rb_hash_aref(dict,rb_ary_entry(seq,i)));  
-      }  
-    }
+        for(int i = 0; i < seq_size; i++ ) {
+          rb_ary_push(seq_key,rb_hash_aref(dict,rb_ary_entry(seq,i)));  
+        }  
+      }
 
     // agroup by unique or not
-    if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
-      //sort with uniq
+    if ( strcmp(StringValuePtr(type_agroupment),"s") == 0 ) {
+      //sort with uniq 
       seq_key = sort_uniq(self,seq_key,1);
     }else{
       //sort without uniq
@@ -282,7 +274,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
     }
 
     // if there is "no-event" and other one selected, remove the "no-event"
-    length_seq_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") == 0 ) ? RARRAY_LEN(seq_key)  : RARRAY_LEN(uniq(seq_key)) ;
+    length_seq_sorted  =  (strcmp(StringValuePtr(type_agroupment),"s") == 0 ) ? RARRAY_LEN(seq_key)  : RARRAY_LEN(uniq(seq_key)) ;
     if (length_seq_sorted != 1) {
       seq_key = remove_entry_from_array(seq_key,"M-3");
     }
@@ -293,9 +285,9 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
     //
     boxes_period_value = rb_hash_aref(rb_ary_entry(boxes,period),seq_key_result);
     if (boxes_period_value  == Qnil) {
-      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result,value);
+      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result, value);
     }else {
-      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result,boxes_period_value + value);
+      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result,INT2FIX(FIX2INT(boxes_period_value) + FIX2INT(value)));
     }    
 
     prox = period +1;
@@ -314,14 +306,15 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
        // agroup by unique or not
       if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
         //sort with uniq
-        prox_key = sort_uniq(self,prox_key,INT2FIX(1));
+        prox_key = sort_uniq(self,prox_key,1);
       }else{
         //sort without uniq
-        prox_key = sort_uniq(self,prox_key,INT2FIX(0));
+        prox_key = prox_key;
       }
 
+  //    
       // if there is "no-event" and other one selected, remove the "no-event"
-      length_prox_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") == 0 ) ? RARRAY_LEN(prox_key)  : RARRAY_LEN(uniq(prox_key)) ;
+      length_prox_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") == 0 ) ? RARRAY_LEN(prox_key)  : RARRAY_LEN(sort_uniq(self,prox_key,1)) ;
       if (length_prox_sorted != 1) {
         prox_key = remove_entry_from_array(prox_key,"M-3");
       }
@@ -337,28 +330,27 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
       link_key =  (char*) malloc( strlen(period_s) + strlen(StringValuePtr(seq_key_result)) + strlen(prox_s) + strlen(StringValuePtr(prox_key_result)) + 3);
       sprintf(link_key,"%s_%s;%s_%s", period_s,StringValuePtr(seq_key_result),prox_s,StringValuePtr(prox_key_result));
 
-      links_period_value = rb_hash_aref(rb_ary_entry(links,period),prox_key_result);
+      links_period_value = rb_hash_aref(rb_ary_entry(links,period),rb_str_new2(link_key));
       if (links_period_value  == Qnil) {
         rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key),value);
       }else {
-        rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key),links_period_value + value);
+        rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key), INT2FIX(FIX2INT(links_period_value) + FIX2INT(value)));
       }    
 
 
 
     }//end prox < aggr_size
 
-  }  
-  return links;
+  }// end for 
+
+  VALUE ab = rb_ary_new();
+  rb_ary_push(ab,1);
+  rb_ary_push(ab,2);
+  //return result_final;
+  return Qnil;
 }  
 
 
-// Function test that only return a int variable in C to Ruby
-static VALUE test(VALUE self, VALUE param){
-
-  int a =  INT2FIX(param);
-  return FIX2INT(a);
-}  
 
 // Main function called when the gem is loaded 
 void Init_visualize_helper(void) {
@@ -366,17 +358,11 @@ void Init_visualize_helper(void) {
   // Register the VisualizeHelper module
   VALUE mVisualizeHelper = rb_define_module("VisualizeHelper");
 
-  // Register the method Hello World without parameters 
-  rb_define_singleton_method(mVisualizeHelper, "hello_world", hello_world, 0);
-
   // Register the method min_max_period 
   rb_define_singleton_method(mVisualizeHelper, "min_max_period", min_max_period, 5);
 
   // Register the method generate_boxes_and_links
   rb_define_singleton_method(mVisualizeHelper, "generate_boxes_and_links", generate_boxes_and_links, 8);
-
-  // Register the method  for development testing
-  rb_define_singleton_method(mVisualizeHelper, "test", test, 1 );
 
   // Register the method sort
   rb_define_singleton_method(mVisualizeHelper, "sort_uniq", sort_uniq, 2 );
