@@ -88,7 +88,7 @@ static char* join(VALUE strings){
 // Receive  an array of unsorted strings with repeated strings and return a single a sorted array with unique elementes or with all
 // strings = array of strings
 // unique =  0 or 1  if want to call unique or not
-static VALUE sort_uniq(VALUE self, VALUE strings, int unique)
+static VALUE sort_uniq(VALUE strings, int unique)
 {
     int strings_size = RARRAY_LEN(strings);
     const char *input[strings_size];
@@ -279,10 +279,10 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
     // agroup by unique or not
     if ( strcmp(StringValuePtr(type_agroupment),"s") == 0 ) {
       //sort with uniq 
-      seq_key = sort_uniq(self,seq_key,1);
+      seq_key = sort_uniq(seq_key,1);
     }else{
       //sort without uniq
-      seq_key = sort_uniq(self,seq_key,0);
+      seq_key = sort_uniq(seq_key,0);
     }
 
     // if there is "no-event" and other one selected, remove the "no-event"
@@ -318,7 +318,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
        // agroup by unique or not
       if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
         //sort with uniq
-        prox_key = sort_uniq(self,prox_key,1);
+        prox_key = sort_uniq(prox_key,1);
       }else{
         //sort without uniq
         prox_key = prox_key;
@@ -326,7 +326,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
 
   //    
       // if there is "no-event" and other one selected, remove the "no-event"
-      length_prox_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") == 0 ) ? RARRAY_LEN(prox_key)  : RARRAY_LEN(sort_uniq(self,prox_key,1)) ;
+      length_prox_sorted  =  (strcmp(StringValuePtr(type_agroupment),"n") == 0 ) ? RARRAY_LEN(prox_key)  : RARRAY_LEN(sort_uniq(prox_key,1)) ;
       if (length_prox_sorted != 1) {
         prox_key = remove_entry_from_array(prox_key,"M-3");
       }
