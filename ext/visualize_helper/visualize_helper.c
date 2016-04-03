@@ -43,32 +43,41 @@ static VALUE uniq(VALUE sorted_array){
 }
 
 //static VALUE join(VALUE self, VALUE strings){
-static VALUE join(VALUE strings){
+static char* join(VALUE strings){
 
   // initial variables
   char* joined;
   int strings_size = RARRAY_LEN(strings);
   int string_size;
+  int string_total_size = 0;
   VALUE string_temp;
   VALUE result;
+  //FILE *f = fopen("file.txt", "w");
   
-  string_temp = rb_ary_entry(strings,0);
+
+
+  // calculate the exact size of malloc
+  for ( int i = 0; i < strings_size; i++) {
+      string_temp = rb_ary_entry(strings,i);
+      string_total_size += strlen(StringValuePtr(string_temp));
+  }
+
+  joined = (char*) malloc( string_total_size +  strings_size + 1);
   string_size = strlen(StringValuePtr(string_temp));
-  joined = (char*) malloc(strings_size + 1);
   sprintf(joined,"%s", StringValuePtr(string_temp));
+
 
   for (int i = 1 ; i < strings_size; i++) {
     
     string_temp = rb_ary_entry(strings,i);
-    string_size = strlen(StringValuePtr(string_temp));
-      
-    joined = (char*)  realloc(joined, string_size + strlen(joined) + 1);
     sprintf(joined,"%s,%s", joined, StringValuePtr(string_temp));
 
   }
-  result = rb_str_new2(joined);  
-  free(joined);
-  return  result;
+  //result = rb_str_new2(joined);  
+  //free(joined);
+  //fprintf(f,"%s\n",joined);
+  //fclose(f);
+  return  joined;
 }
 
 
@@ -225,8 +234,8 @@ static VALUE remove_entry_from_array (VALUE strings, char* element){
 static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE aggr, VALUE boxes, VALUE links, VALUE dict, VALUE type_agroupment, VALUE value)
 {
 
-  VALUE seq_key_result;
-  VALUE prox_key_result;
+  char* seq_key_result;
+  char* prox_key_result;
   // Initial Variables
   int length_seq_sorted;
   int length_prox_sorted;
@@ -283,11 +292,11 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
     seq_key_result = join(seq_key);
 
     //
-    boxes_period_value = rb_hash_aref(rb_ary_entry(boxes,period),seq_key_result);
+    boxes_period_value = rb_hash_aref(rb_ary_entry(boxes,period),rb_str_new2(seq_key_result));
     if (boxes_period_value  == Qnil) {
-      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result, value);
+      rb_hash_aset(rb_ary_entry(boxes,period),rb_str_new2(seq_key_result), value);
     }else {
-      rb_hash_aset(rb_ary_entry(boxes,period),seq_key_result,INT2FIX(FIX2INT(boxes_period_value) + FIX2INT(value)));
+      rb_hash_aset(rb_ary_entry(boxes,period),rb_str_new2(seq_key_result),INT2FIX(FIX2INT(boxes_period_value) + FIX2INT(value)));
     }    
 
     prox = period +1;
@@ -327,8 +336,8 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
       prox_s = ( prox == 0 ) ? (char*) malloc(1)  : (char*) malloc(floor(log10(abs(prox))) + 1);
       sprintf(period_s,"%d",period);
       sprintf(prox_s,"%d",prox);
-      link_key =  (char*) malloc( strlen(period_s) + strlen(StringValuePtr(seq_key_result)) + strlen(prox_s) + strlen(StringValuePtr(prox_key_result)) + 3);
-      sprintf(link_key,"%s_%s;%s_%s", period_s,StringValuePtr(seq_key_result),prox_s,StringValuePtr(prox_key_result));
+      link_key =  (char*) malloc( strlen(period_s) + strlen(seq_key_result) + strlen(prox_s) + strlen(prox_key_result) + 3);
+      sprintf(link_key,"%s_%s;%s_%s", period_s,seq_key_result,prox_s,prox_key_result);
 
       links_period_value = rb_hash_aref(rb_ary_entry(links,period),rb_str_new2(link_key));
       if (links_period_value  == Qnil) {
@@ -337,15 +346,14 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE min, VALUE max, VALUE ag
         rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key), INT2FIX(FIX2INT(links_period_value) + FIX2INT(value)));
       }    
 
-
+      free(period_s); 
+      free(prox_s); 
+      free(link_key); 
 
     }//end prox < aggr_size
 
   }// end for 
 
-  VALUE ab = rb_ary_new();
-  rb_ary_push(ab,1);
-  rb_ary_push(ab,2);
   //return result_final;
   return Qnil;
 }  
@@ -368,5 +376,5 @@ void Init_visualize_helper(void) {
   rb_define_singleton_method(mVisualizeHelper, "sort_uniq", sort_uniq, 2 );
 
   // Register the method sort
-  rb_define_singleton_method(mVisualizeHelper, "join", join, 1 );
+  //rb_define_singleton_method(mVisualizeHelper, "join", join, 1 );
 }
