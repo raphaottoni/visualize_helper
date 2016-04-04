@@ -156,6 +156,7 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
   int max_c = FIX2INT(rb_ary_entry(array,1));
   int period;
 
+
   if (days_c < first_interval_c) {
     if (min_c > days_c) {
       min_c = days_c;
@@ -197,7 +198,12 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
 
   rb_ary_store(array,0,INT2FIX(min_c));
   rb_ary_store(array,1,INT2FIX(max_c));
-  rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,0));
+  //rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,0));
+  int traj_size = RARRAY_LEN(traj);
+
+  for ( int i =0; i < traj_size; i++){
+    rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,i));
+  }  
 
   return ST_CONTINUE;
 }  
