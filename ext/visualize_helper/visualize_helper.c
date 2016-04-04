@@ -4,6 +4,19 @@
 #include <stdio.h>
 #include <math.h>
 
+void RemoveSpaces(char* source)
+{
+  char* i = source;
+  char* j = source;
+  while(*j != 0)
+  {
+    *i = *j++;
+    if(*i != ' ')
+      i++;
+  }
+  *i = 0;
+}
+
 
 int myCompare (const void * a, const void * b ) {
     const char *pa = *(const char**)a;
@@ -253,9 +266,10 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
   int aggr_prox_size;
   int prox;
   int aggr_size = RARRAY_LEN(aggr);
-  char* link_key;
+  char* link_key = (char*) malloc(1000);
   char* period_s;
   char* prox_s;
+  //FILE *f = fopen("/tmp/file.txt", "a");
 
   for(int period = 0; period < aggr_size; period++ ){
      seq_key = rb_ary_new();
@@ -319,10 +333,11 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
       if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
         //sort with uniq
         prox_key = sort_uniq(prox_key,1);
-      }else{
-        //sort without uniq
-        prox_key = prox_key;
       }
+      //else{
+      //  //sort without uniq
+      //  prox_key = prox_key;
+      //}
 
   //    
       // if there is "no-event" and other one selected, remove the "no-event"
@@ -339,8 +354,16 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
       prox_s = ( prox == 0 ) ? (char*) malloc(1)  : (char*) malloc(floor(log10(abs(prox))) + 1);
       sprintf(period_s,"%d",period);
       sprintf(prox_s,"%d",prox);
-      link_key =  (char*) malloc( strlen(period_s) + strlen(seq_key_result) + strlen(prox_s) + strlen(prox_key_result) + 3);
+      //link_key =  (char*) malloc( strlen(period_s) + strlen(seq_key_result) + strlen(prox_s) + strlen(prox_key_result) + 3);
       sprintf(link_key,"%s_%s;%s_%s", period_s,seq_key_result,prox_s,prox_key_result);
+      RemoveSpaces(link_key);
+      
+      //fprintf(f,"Composicao key:\n");
+      //fprintf(f,"period_s: %s\n",period_s);
+      //fprintf(f,"seq_key: %s\n",seq_key_result);
+      //fprintf(f,"prox_s : %s\n",prox_s);
+      //fprintf(f,"prox_key_result: %s\n",prox_key_result);
+      //fprintf(f,"chave final : %s\n",link_key);
 
       links_period_value = rb_hash_aref(rb_ary_entry(links,period),rb_str_new2(link_key));
       if (links_period_value  == Qnil) {
@@ -349,14 +372,16 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
         rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key), INT2FIX(FIX2INT(links_period_value) + FIX2INT(value)));
       }    
 
-      free(period_s); 
-      free(prox_s); 
-      free(link_key); 
 
     }//end prox < aggr_size
 
   }// end for 
 
+  free(period_s); 
+  free(prox_s); 
+  free(link_key); 
+
+  //fclose(f);
   //return result_final;
   return Qnil;
 }  

@@ -1,3 +1,3 @@
 module VisualizeHelper
-  VERSION = "0.0.10.47"
+  VERSION = "0.0.10.79"
 end
