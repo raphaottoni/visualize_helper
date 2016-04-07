@@ -155,6 +155,8 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
   int min_c = FIX2INT(rb_ary_entry(array,0));
   int max_c = FIX2INT(rb_ary_entry(array,1));
   int period;
+  int traj_size;
+  //FILE *f = fopen("/tmp/aggr.txt", "a+");
 
 
   if (days_c < first_interval_c) {
@@ -180,12 +182,12 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
       if( index < (intervals_size - 1) ){
         int intervals_index_plus_1 =  FIX2INT(rb_ary_entry(intervals,index+1));
         if ( intervals_index_plus_1 <= 0  ){
-          if (( days_c >= rb_ary_entry(intervals,index)) && (days_c < intervals_index_plus_1)) {
+          if (( days_c >= FIX2INT(rb_ary_entry(intervals,index))) && (days_c < intervals_index_plus_1)) {
             period = index +1;
             //rb_ary_store(array,2,INT2FIX(i+1));
             break;
           }  
-        }else if ( (days_c > rb_ary_entry(intervals,index) ) && (days_c <= intervals_index_plus_1) ) {
+        }else if ( (days_c > FIX2INT(rb_ary_entry(intervals,index)) ) && (days_c <= intervals_index_plus_1) ) {
           period = index + 2;
           //rb_ary_store(array,2,INT2FIX(i+2));
           break;
@@ -198,12 +200,32 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
 
   rb_ary_store(array,0,INT2FIX(min_c));
   rb_ary_store(array,1,INT2FIX(max_c));
-  //rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,0));
-  int traj_size = RARRAY_LEN(traj);
+  traj_size = RARRAY_LEN(traj);
 
   for ( int i =0; i < traj_size; i++){
     rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,i));
   }  
+
+  // FOR DEBUG
+  //for (int i = 0; i < aggr_size; i++) {
+  //  fprintf(f, "[");
+  //  VALUE temp =  rb_ary_entry(aggr,i);
+  //  int temp_size = RARRAY_LEN(temp);
+  //  for (int j = 0; j < temp_size; j++){
+  //    VALUE temp_string =  rb_ary_entry(temp,j);
+  //    fprintf(f, "%s", StringValuePtr(temp_string));
+  //    if ( j != temp_size -1 ){
+  //      fprintf(f, ",");
+  //    }  
+  //  }
+  //  fprintf(f, "]");
+  //  if ( i != aggr_size -1 ){
+  //    fprintf(f, ",");
+  //  }  
+  //}
+
+  //fprintf(f, "\n");
+  //fclose(f);
 
   return ST_CONTINUE;
 }  
