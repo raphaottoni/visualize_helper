@@ -65,7 +65,6 @@ static char* join(VALUE strings){
   int string_total_size = 0;
   VALUE string_temp;
   VALUE result;
-  //FILE *f = fopen("file.txt", "w");
   
 
 
@@ -89,10 +88,6 @@ static char* join(VALUE strings){
 
   }
   strcat(joined,"\0");
-  //result = rb_str_new2(joined);  
-  //free(joined);
-  //fprintf(f,"%s\n",joined);
-  //fclose(f);
   return  joined;
 }
 
@@ -273,6 +268,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
      if (period < aggr_size - 1) {
       prox_key = rb_ary_new();
      } 
+
      seq = rb_ary_entry(aggr,period);
      seq_size = (int) RARRAY_LEN(seq);
 
@@ -280,14 +276,13 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
       if (seq_size == 0) {
         rb_ary_push(seq_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
       }else{
-
         for(int i = 0; i < seq_size; i++ ) {
           rb_ary_push(seq_key,rb_hash_aref(dict,rb_ary_entry(seq,i)));  
         }  
       }
 
     // agroup by unique or not
-    if ( strcmp(StringValuePtr(type_agroupment),"s") == 0 ) {
+    if ( strcmp(StringValuePtr(type_agroupment),"n") == 0 ) {
       //sort with uniq 
       seq_key = sort_uniq(seq_key,1);
     }else{
