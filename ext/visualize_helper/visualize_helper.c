@@ -34,8 +34,9 @@ static VALUE uniq(VALUE sorted_array){
   //initialize variables for compare 
   char* previous;
   char* current;
+  int i;
 
-  for( int i = 0; i < RARRAY_LEN(sorted_array); i++){
+  for( i = 0; i < RARRAY_LEN(sorted_array); i++){
     VALUE current_temp = rb_ary_entry(sorted_array,i);
     current =  StringValuePtr(current_temp);
     // initial case, when there is no previous
@@ -65,11 +66,12 @@ static char* join(VALUE strings){
   int string_total_size = 0;
   VALUE string_temp;
   VALUE result;
+  int i;
   
 
 
   // calculate the exact size of malloc
-  for ( int i = 0; i < strings_size; i++) {
+  for ( i = 0; i < strings_size; i++) {
       string_temp = rb_ary_entry(strings,i);
       string_total_size += strlen(StringValuePtr(string_temp));
   }
@@ -81,7 +83,7 @@ static char* join(VALUE strings){
   sprintf(joined,"%s", StringValuePtr(string_temp));
 
 
-  for (int i = 1 ; i < strings_size; i++) {
+  for (i = 1 ; i < strings_size; i++) {
     
     string_temp = rb_ary_entry(strings,i);
     sprintf(joined,"%s,%s", joined, StringValuePtr(string_temp));
@@ -100,8 +102,9 @@ static VALUE sort_uniq(VALUE strings, int unique)
 {
     int strings_size = RARRAY_LEN(strings);
     const char *input[strings_size];
+    int i;
 
-    for (int i = 0; i< strings_size; i++){
+    for (i = 0; i< strings_size; i++){
       VALUE string  = rb_ary_entry(strings,i);
       input[i] = StringValuePtr(string);
     }
@@ -112,7 +115,7 @@ static VALUE sort_uniq(VALUE strings, int unique)
 
     // Transform the result input into a ruby array
     VALUE resultado = rb_ary_new();
-    for (int i=0; i<stringLen; ++i) {
+    for (i=0; i<stringLen; ++i) {
       rb_ary_push(resultado,rb_str_new2(input[i]));
     } 
 
@@ -149,8 +152,7 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
   int days_c = atoi(StringValuePtr(days));
   int min_c = FIX2INT(rb_ary_entry(array,0));
   int max_c = FIX2INT(rb_ary_entry(array,1));
-  int period;
-  int traj_size;
+  int period, traj_size, index, i;
 
 
   if (days_c < first_interval_c) {
@@ -167,7 +169,7 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
     }
     period = aggr_size -1;
   }else {  
-    for ( int index = 0 ; index < intervals_size ; index++){
+    for ( index = 0 ; index < intervals_size ; index++){
       if( index < (intervals_size - 1) ){
         int intervals_index_plus_1 =  FIX2INT(rb_ary_entry(intervals,index+1));
         if ( intervals_index_plus_1 <= 0  ){
@@ -186,7 +188,7 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
   rb_ary_store(array,0,INT2FIX(min_c));
   rb_ary_store(array,1,INT2FIX(max_c));
   traj_size = RARRAY_LEN(traj);
-  for ( int i =0; i < traj_size; i++){
+  for ( i =0; i < traj_size; i++){
     rb_ary_push(rb_ary_entry(aggr,period),rb_ary_entry(traj,i));
   }  
 
@@ -225,8 +227,9 @@ static VALUE remove_entry_from_array (VALUE strings, char* element){
     VALUE result = rb_ary_new();
     char* current_value;
     VALUE current_value_temp;
+    int i;
     
-    for(int i = 0; i < RARRAY_LEN(strings); i++){
+    for( i = 0; i < RARRAY_LEN(strings); i++){
         current_value_temp = rb_ary_entry(strings,i);
         current_value  = StringValuePtr(current_value_temp);
         if (strcmp(current_value, element) != 0) {
@@ -260,9 +263,10 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
   char* link_key = (char*) malloc(1000);
   char* period_s;
   char* prox_s;
+  int period,i;
   //FILE *f = fopen("/tmp/file.txt", "a");
 
-  for(int period = 0; period < aggr_size; period++ ){
+  for(period = 0; period < aggr_size; period++ ){
      seq_key = rb_ary_new();
 
      if (period < aggr_size - 1) {
@@ -276,7 +280,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
       if (seq_size == 0) {
         rb_ary_push(seq_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
       }else{
-        for(int i = 0; i < seq_size; i++ ) {
+        for(i = 0; i < seq_size; i++ ) {
           rb_ary_push(seq_key,rb_hash_aref(dict,rb_ary_entry(seq,i)));  
         }  
       }
@@ -315,7 +319,7 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
       if ( aggr_prox_size == 0) {
         rb_ary_push(prox_key,rb_hash_aref(dict, rb_str_new2("M-2"))); 
       }else{
-        for(int i = 0; i < aggr_prox_size ; i++ ) {
+        for( i = 0; i < aggr_prox_size ; i++ ) {
           rb_ary_push(prox_key,rb_hash_aref(dict,rb_ary_entry(aggr_prox,i)));  
         }  
       }     
@@ -391,14 +395,15 @@ static VALUE iterate_over_trajectories(VALUE self, VALUE trajectories, VALUE min
   VALUE value;
   VALUE result;
   VALUE min_max_aggr;
+  int i,j;
 
   // iterate over each trajectory
-  for (int i = 0; i < RARRAY_LEN(trajectories); i++ ){
+  for (i = 0; i < RARRAY_LEN(trajectories); i++ ){
   
     trajectory = rb_ary_entry(trajectories,i);
 
     aggr = rb_ary_new();
-    for (int j = 0; j < RARRAY_LEN(intervals) + 2; j++){
+    for (j = 0; j < RARRAY_LEN(intervals) + 2; j++){
       rb_ary_push(aggr,rb_ary_new());
     } 
   
