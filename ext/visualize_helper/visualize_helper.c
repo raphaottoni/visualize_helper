@@ -264,7 +264,6 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
   char* period_s;
   char* prox_s;
   int period,i;
-  //FILE *f = fopen("/tmp/file.txt", "a");
 
   for(period = 0; period < aggr_size; period++ ){
      seq_key = rb_ary_new();
@@ -353,13 +352,6 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
       sprintf(link_key,"%s_%s;%s_%s", period_s,seq_key_result,prox_s,prox_key_result);
       RemoveSpaces(link_key);
       
-      //fprintf(f,"Composicao key:\n");
-      //fprintf(f,"period_s: %s\n",period_s);
-      //fprintf(f,"seq_key: %s\n",seq_key_result);
-      //fprintf(f,"prox_s : %s\n",prox_s);
-      //fprintf(f,"prox_key_result: %s\n",prox_key_result);
-      //fprintf(f,"chave final : %s\n",link_key);
-
       links_period_value = rb_hash_aref(rb_ary_entry(links,period),rb_str_new2(link_key));
       if (links_period_value  == Qnil) {
         rb_hash_aset(rb_ary_entry(links,period),rb_str_new2(link_key),value);
@@ -376,8 +368,6 @@ static VALUE generate_boxes_and_links(VALUE self, VALUE aggr, VALUE boxes, VALUE
   free(prox_s); 
   free(link_key); 
 
-  //fclose(f);
-  //return result_final;
   return Qnil;
 }  
 
@@ -388,12 +378,13 @@ static VALUE join_teste(VALUE self, VALUE strings){
 }
 
 
-static VALUE iterate_over_trajectories(VALUE self, VALUE trajectories, VALUE min, VALUE max, VALUE hash, VALUE key_v, VALUE key_t, VALUE intervals, VALUE dict, VALUE agrupamento, VALUE boxes, VALUE links) {
+
+// iterate over all the tracjetories and create the boxes and links needed for the dashboard
+static VALUE iterate_over_trajectories(VALUE self, VALUE trajectories, VALUE min, VALUE max, VALUE hash_v, VALUE hash_t, VALUE intervals, VALUE dict, VALUE agrupamento, VALUE boxes, VALUE links) {
 
   VALUE trajectory;
   VALUE aggr;
   VALUE value;
-  VALUE result;
   VALUE min_max_aggr;
   int i,j;
 
@@ -407,20 +398,17 @@ static VALUE iterate_over_trajectories(VALUE self, VALUE trajectories, VALUE min
       rb_ary_push(aggr,rb_ary_new());
     } 
   
-    value = rb_hash_aref(hash,key_v);
-    VALUE temp  =  rb_hash_aref(hash,key_t);
-    min_max_aggr = min_max_period(self,min,max,rb_hash_aref(temp,trajectory),intervals,aggr);
+    value = rb_hash_aref(hash_v,trajectory);
+    min_max_aggr = min_max_period(self,min,max,rb_hash_aref(hash_t,trajectory),intervals,aggr);
     aggr = rb_ary_entry(min_max_aggr,4);
     min = rb_ary_entry(min_max_aggr,0);
     max = rb_ary_entry(min_max_aggr,1);
+
     generate_boxes_and_links(self,aggr,boxes,links,dict,agrupamento,value);
 
   }  
 
-  result = rb_ary_new();
-  rb_ary_push(result,boxes);
-  rb_ary_push(result,links);
-  return result;
+  return Qnil;
 }  
 
 // Main function called when the gem is loaded 
@@ -439,7 +427,7 @@ void Init_visualize_helper(void) {
   rb_define_singleton_method(mVisualizeHelper, "sort_uniq", sort_uniq, 2 );
 
   // Register the method that iterates for each trajectory
-  rb_define_singleton_method(mVisualizeHelper, "iterate_over_trajectories", iterate_over_trajectories, 11);
+  rb_define_singleton_method(mVisualizeHelper, "iterate_over_trajectories", iterate_over_trajectories, 10);
 
   // Register the method sort
   rb_define_singleton_method(mVisualizeHelper, "join_teste", join_teste, 1 );
