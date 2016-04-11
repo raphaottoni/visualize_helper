@@ -140,7 +140,7 @@ static int encontra_min_max_period(VALUE days, VALUE traj, VALUE array){
   // Convert every variable need to C value
   VALUE intervals = rb_ary_entry(array,3);
   VALUE aggr = rb_ary_entry(array,4);
-  int intervals_size = RARRAY_LEN(array);
+  int intervals_size = RARRAY_LEN(intervals);
   int aggr_size = RARRAY_LEN(aggr);
   VALUE first_interval = rb_ary_entry(intervals,0);
   VALUE last_interval = rb_ary_entry(intervals,intervals_size - 1);
@@ -384,6 +384,40 @@ static VALUE join_teste(VALUE self, VALUE strings){
 }
 
 
+static VALUE iterate_over_trajectories(VALUE self, VALUE trajectories, VALUE min, VALUE max, VALUE hash, VALUE key_v, VALUE key_t, VALUE intervals, VALUE dict, VALUE agrupamento, VALUE boxes, VALUE links) {
+
+  VALUE trajectory;
+  VALUE aggr;
+  VALUE value;
+  VALUE result;
+  VALUE min_max_aggr;
+
+  // iterate over each trajectory
+  for (int i = 0; i < RARRAY_LEN(trajectories); i++ ){
+  
+    trajectory = rb_ary_entry(trajectories,i);
+
+    aggr = rb_ary_new();
+    for (int j = 0; j < RARRAY_LEN(intervals) + 2; j++){
+      rb_ary_push(aggr,rb_ary_new());
+    } 
+  
+    value = rb_hash_aref(hash,key_v);
+    VALUE temp  =  rb_hash_aref(hash,key_t);
+    min_max_aggr = min_max_period(self,min,max,rb_hash_aref(temp,trajectory),intervals,aggr);
+    aggr = rb_ary_entry(min_max_aggr,4);
+    min = rb_ary_entry(min_max_aggr,0);
+    max = rb_ary_entry(min_max_aggr,1);
+    generate_boxes_and_links(self,aggr,boxes,links,dict,agrupamento,value);
+
+  }  
+
+  result = rb_ary_new();
+  rb_ary_push(result,boxes);
+  rb_ary_push(result,links);
+  return result;
+}  
+
 // Main function called when the gem is loaded 
 void Init_visualize_helper(void) {
 
@@ -398,6 +432,9 @@ void Init_visualize_helper(void) {
 
   // Register the method sort
   rb_define_singleton_method(mVisualizeHelper, "sort_uniq", sort_uniq, 2 );
+
+  // Register the method that iterates for each trajectory
+  rb_define_singleton_method(mVisualizeHelper, "iterate_over_trajectories", iterate_over_trajectories, 11);
 
   // Register the method sort
   rb_define_singleton_method(mVisualizeHelper, "join_teste", join_teste, 1 );
