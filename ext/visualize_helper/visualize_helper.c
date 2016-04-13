@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <omp.h>
 
 void RemoveSpaces(char* source)
 {
@@ -411,6 +412,33 @@ static VALUE iterate_over_trajectories(VALUE self, VALUE trajectories, VALUE min
   return Qnil;
 }  
 
+
+static VALUE openmp_test(VALUE self, VALUE string) {
+  FILE *f = fopen("/tmp/open_mp", "w");
+
+  int nthreads, tid;
+
+  /* Fork a team of threads giving them their own copies of variables */
+  #pragma omp parallel private(nthreads, tid)
+  {
+  
+    /* Obtain thread number */
+    tid = omp_get_thread_num();
+    fprintf(f,"Hello World from thread = %d\n", tid);
+  
+    /* Only master thread does this */
+    if (tid == 0)
+      {
+      nthreads = omp_get_num_threads();
+      fprintf(f,"Number of threads = %d\n", nthreads);
+      }
+  
+  }  /* All threads join master thread and disband */
+
+  fclose(f);
+  return string;
+}
+
 // Main function called when the gem is loaded 
 void Init_visualize_helper(void) {
 
@@ -431,4 +459,7 @@ void Init_visualize_helper(void) {
 
   // Register the method sort
   rb_define_singleton_method(mVisualizeHelper, "join_teste", join_teste, 1 );
+
+  // Register a test with openmp
+  rb_define_singleton_method(mVisualizeHelper, "openmp_test", openmp_test, 1 );
 }
