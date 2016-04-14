@@ -414,6 +414,7 @@ static VALUE iterate_over_trajectories(VALUE self, VALUE trajectories, VALUE min
 
 
 static VALUE openmp_test(VALUE self, VALUE string) {
+
   FILE *f = fopen("/tmp/open_mp", "w");
 
   int nthreads, tid;
