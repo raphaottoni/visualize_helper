@@ -440,6 +440,118 @@ static VALUE openmp_test(VALUE self, VALUE string) {
   return string;
 }
 
+
+// Function callback to iterate in hash of boxes or links
+static int update_boxes_links(VALUE key, VALUE value, VALUE parameters){
+ 
+  VALUE boxes_links_result = rb_ary_entry(parameters,0);
+  int index = FIX2INT(rb_ary_entry(parameters,1));
+
+  VALUE boxes_links_result_index = rb_ary_entry(boxes_links_result,index);
+
+  // if the key isnt already set on the boxes_result, create it 
+  if (rb_hash_aref(boxes_links_result_index,key) == Qnil) {
+    rb_hash_aset(boxes_links_result_index,key,value);
+  }else{
+    // if the key is already on the boxes_result, sum the results
+    rb_hash_aset(boxes_links_result_index,key, FIX2INT(rb_hash_aref(boxes_links_result_index,key)) + FIX2INT(value));
+  }  
+
+  return ST_CONTINUE;
+}  
+
+
+
+
+// iterate over all the trajectories and create the boxes and links needed for the dashboard (Parallel)
+//static VALUE iterate_over_trajectories_parallel(VALUE self, VALUE trajectories, VALUE min, VALUE max, VALUE hash_v, VALUE hash_t, VALUE intervals, VALUE dict, VALUE agrupamento, VALUE boxes, VALUE links) {
+static VALUE iterate_over_trajectories_parallel() {
+
+  //VALUE trajectory;
+  VALUE aggr;
+  //VALUE value;
+  //VALUE min_max_aggr;
+  //VALUE boxes_result = rb_ary_new(); 
+  //VALUE links_result = rb_ary_new();
+  int i,j;
+  
+
+  //initialize boxes_result and links_result
+  //for (j = 0; j < RARRAY_LEN(intervals) + 2; j++){
+  //  rb_ary_push(boxes_result,rb_hash_new());
+  //  if ( j != 0) {
+  //    rb_ary_push(links_result,rb_hash_new());
+  //  }  
+  //} 
+
+  //#pragma omp parallel firstprivate(boxes,links,i,j)
+  //#pragma omp parallel private(i,j,aggr,boxes,links)
+  //{
+  //  //#pragma omp for nowait
+  //  #pragma omp for firstprivate(min,max) nowait
+  //  for (i = 0; i < RARRAY_LEN(trajectories); i++ ){
+  //  
+  //    
+  //    trajectory = rb_ary_entry(trajectories,i);
+   
+  #pragma omp parallel for private(i,aggr)
+  for (i = 0; i < 500; i++ ){
+
+      aggr = rb_ary_new();
+      //for (j = 0; j < RARRAY_LEN(intervals) + 2; j++){
+      //  rb_ary_push(aggr,rb_ary_new());
+      //} 
+    
+      //value = rb_hash_aref(hash_v,trajectory);
+      //min_max_aggr = min_max_period(self,min,max,rb_hash_aref(hash_t,trajectory),intervals,aggr);
+      //aggr = rb_ary_entry(min_max_aggr,4);
+      //min = rb_ary_entry(min_max_aggr,0);
+      //max = rb_ary_entry(min_max_aggr,1);
+
+      //generate_boxes_and_links(self,aggr,boxes,links,dict,agrupamento,value);
+
+   // }// end pragma for  
+  }
+  //  // must aggregate the boxes from each thread into boxes_result
+  //  #pragma omp critical
+  //  {
+  //    int i;
+  //    VALUE parameters = rb_ary_new2(2);
+  //    // iterate over the size of boxes
+  //    for(i = 0; i < RARRAY_LEN(boxes); i++ ){
+  //      
+  //      rb_ary_store(parameters,0,boxes_result);
+  //      rb_ary_store(parameters,1,INT2FIX(i));
+  //      VALUE hash = rb_ary_entry(boxes,i);
+  //      //iterate over each key of the hashmap
+  //      rb_hash_foreach(hash,update_boxes_links,parameters);
+  //    }  
+  //  }  
+
+  //  // must aggregate the links from each thread into links_result
+  //  #pragma omp critical
+  //  {
+  //    int i;
+  //    VALUE parameters = rb_ary_new2(2);
+  //    for(i = 0; i < RARRAY_LEN(links); i++ ){
+  //      
+  //      rb_ary_store(parameters,0,links_result);
+  //      rb_ary_store(parameters,1,INT2FIX(i));
+  //      VALUE hash = rb_ary_entry(links,i);
+  //      //iterate over each key of the hashmap
+  //      rb_hash_foreach(hash,update_boxes_links,parameters);
+  //    }  
+  //  }  
+
+  //}// and pragma parallel
+
+  return Qnil;
+}  
+
+
+
+
+
 // Main function called when the gem is loaded 
 void Init_visualize_helper(void) {
 
@@ -455,7 +567,7 @@ void Init_visualize_helper(void) {
   // Register the method sort
   rb_define_singleton_method(mVisualizeHelper, "sort_uniq", sort_uniq, 2 );
 
-  // Register the method that iterates for each trajectory
+  // Register the method that iterates on each trajectory 
   rb_define_singleton_method(mVisualizeHelper, "iterate_over_trajectories", iterate_over_trajectories, 10);
 
   // Register the method sort
@@ -463,4 +575,7 @@ void Init_visualize_helper(void) {
 
   // Register a test with openmp
   rb_define_singleton_method(mVisualizeHelper, "openmp_test", openmp_test, 1 );
+
+  // Register the method that iterates on each trajectory using openmp
+  rb_define_singleton_method(mVisualizeHelper, "iterate_over_trajectories_parallel", iterate_over_trajectories_parallel, 0);
 }
